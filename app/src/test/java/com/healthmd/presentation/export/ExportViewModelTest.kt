@@ -102,6 +102,40 @@ class ExportViewModelTest {
     }
 
     @Test
+    fun rangeInsideThirtyDaysFromTodayButOlderThanFirstGrantNeedsHistoricalPermission() = runTest {
+        val today = LocalDate.now()
+        val healthRepository = FakeHealthRepository(
+            hasPermissions = true,
+            hasHistoricalReadPermission = false,
+        )
+        val exportRepository = FakeExportRepository()
+        val historyRepository = FakeExportHistoryRepository()
+        val settingsRepository = FakeSettingsRepository(
+            initialFirstHealthPermissionGrantDate = today,
+        )
+        val viewModel = createViewModel(
+            healthRepository = healthRepository,
+            exportRepository = exportRepository,
+            settingsRepository = settingsRepository,
+            exportHistoryRepository = historyRepository,
+        )
+        advanceUntilIdle()
+
+        viewModel.setStartDate(today.minusDays(30))
+        viewModel.setEndDate(today.minusDays(26))
+
+        assertThat(viewModel.uiState.value.requiresHistoricalReadPermission).isTrue()
+        assertThat(viewModel.uiState.value.historyPermissionNeeded).isTrue()
+
+        viewModel.startExport()
+        advanceUntilIdle()
+
+        assertThat(healthRepository.fetchCalls).isEqualTo(0)
+        assertThat(exportRepository.exportCalls).isEqualTo(0)
+        assertThat(historyRepository.entries).isEmpty()
+    }
+
+    @Test
     fun allTimeExportMissingHistoricalPermissionDoesNotExportEvenWhenVisibleDataIsRecent() = runTest {
         val today = LocalDate.now()
         val healthRepository = FakeHealthRepository(
@@ -210,12 +244,15 @@ private class FakeExportRepository : ExportRepository {
     override fun getExportFolderName(): String? = "Health.md"
 }
 
-private class FakeSettingsRepository : SettingsRepository {
+private class FakeSettingsRepository(
+    initialFirstHealthPermissionGrantDate: LocalDate? = null,
+) : SettingsRepository {
     private val exportSettingsState = MutableStateFlow(ExportSettings())
     private val exportFolderUriState = MutableStateFlow<String?>("content://health-md")
     private val freeExportsRemainingState = MutableStateFlow(3)
     private val isPurchasedState = MutableStateFlow(false)
     private val hasCompletedOnboardingState = MutableStateFlow(true)
+    private val firstHealthPermissionGrantDateState = MutableStateFlow(initialFirstHealthPermissionGrantDate)
     private val lastPresentedReleaseVersionState = MutableStateFlow<String?>(null)
     private var successfulExportCount = 0
     private var requestedReview = false
@@ -225,6 +262,7 @@ private class FakeSettingsRepository : SettingsRepository {
     override val freeExportsRemaining: Flow<Int> = freeExportsRemainingState
     override val isPurchased: Flow<Boolean> = isPurchasedState
     override val hasCompletedOnboarding: Flow<Boolean> = hasCompletedOnboardingState
+    override val firstHealthPermissionGrantDate: Flow<LocalDate?> = firstHealthPermissionGrantDateState
     override val lastPresentedReleaseVersion: Flow<String?> = lastPresentedReleaseVersionState
 
     override suspend fun updateExportSettings(settings: ExportSettings) {
@@ -263,6 +301,14 @@ private class FakeSettingsRepository : SettingsRepository {
 
     override suspend fun setReviewRequested() {
         requestedReview = true
+    }
+
+    override suspend fun getFirstHealthPermissionGrantDate(): LocalDate? = firstHealthPermissionGrantDateState.value
+
+    override suspend fun recordHealthPermissionGrantDateIfAbsent(date: LocalDate) {
+        if (firstHealthPermissionGrantDateState.value == null) {
+            firstHealthPermissionGrantDateState.value = date
+        }
     }
 
     override suspend fun getLastPresentedReleaseVersion(): String? = lastPresentedReleaseVersionState.value

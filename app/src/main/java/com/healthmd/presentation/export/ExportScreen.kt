@@ -647,6 +647,7 @@ fun ExportScreen(
                     stringResource(R.string.debug_has_permissions) to "${uiState.hasPermissions}",
                     stringResource(R.string.debug_has_history_permission) to "${uiState.hasHistoricalReadPermission}",
                     stringResource(R.string.debug_requires_history_permission) to "${uiState.requiresHistoricalReadPermission}",
+                    stringResource(R.string.debug_first_permission_grant) to (uiState.firstHealthPermissionGrantDate?.toString() ?: "—"),
                     stringResource(R.string.debug_granted) to grantedCount,
                 )
 

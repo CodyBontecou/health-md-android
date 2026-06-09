@@ -87,12 +87,14 @@ class FakeSettingsRepository(
     initialFolderUri: String? = "content://exports",
     initialFreeExportsRemaining: Int = 3,
     initialPurchased: Boolean = false,
+    initialFirstHealthPermissionGrantDate: LocalDate? = null,
 ) : SettingsRepository {
     private val exportSettingsState = MutableStateFlow(initialSettings)
     private val exportFolderUriState = MutableStateFlow(initialFolderUri)
     private val freeExportsRemainingState = MutableStateFlow(initialFreeExportsRemaining)
     private val isPurchasedState = MutableStateFlow(initialPurchased)
     private val hasCompletedOnboardingState = MutableStateFlow(false)
+    private val firstHealthPermissionGrantDateState = MutableStateFlow(initialFirstHealthPermissionGrantDate)
     private val lastPresentedReleaseVersionState = MutableStateFlow<String?>(null)
 
     var decrementFreeExportsCalls: Int = 0
@@ -151,6 +153,16 @@ class FakeSettingsRepository(
 
     override suspend fun setReviewRequested() {
         reviewRequested = true
+    }
+
+    override val firstHealthPermissionGrantDate: Flow<LocalDate?> = firstHealthPermissionGrantDateState
+
+    override suspend fun getFirstHealthPermissionGrantDate(): LocalDate? = firstHealthPermissionGrantDateState.value
+
+    override suspend fun recordHealthPermissionGrantDateIfAbsent(date: LocalDate) {
+        if (firstHealthPermissionGrantDateState.value == null) {
+            firstHealthPermissionGrantDateState.value = date
+        }
     }
 
     override val lastPresentedReleaseVersion: Flow<String?> = lastPresentedReleaseVersionState

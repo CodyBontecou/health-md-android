@@ -40,12 +40,17 @@ data class ExportUiState(
     val healthConnectNeedsSetup: Boolean = false,
     val hasPermissions: Boolean = false,
     val hasHistoricalReadPermission: Boolean = false,
+    val firstHealthPermissionGrantDate: LocalDate? = null,
     val allTimeSelected: Boolean = false,
     val freeExportsRemaining: Int = 3,
     val isPurchased: Boolean = false,
 ) {
     val requiresHistoricalReadPermission: Boolean
-        get() = allTimeSelected || ExportHistoryAccess.requiresHistoricalReadPermission(startDate, endDate)
+        get() = allTimeSelected || ExportHistoryAccess.requiresHistoricalReadPermission(
+            startDate = startDate,
+            endDate = endDate,
+            firstPermissionGrantDate = firstHealthPermissionGrantDate,
+        )
 
     val historyPermissionNeeded: Boolean
         get() = requiresHistoricalReadPermission && !hasHistoricalReadPermission
@@ -87,7 +92,8 @@ class ExportViewModel @Inject constructor(
                 settingsRepository.exportFolderUri,
                 settingsRepository.freeExportsRemaining,
                 isPurchasedFlow,
-            ) { settings, folderUri, freeExports, purchased ->
+                settingsRepository.firstHealthPermissionGrantDate,
+            ) { settings, folderUri, freeExports, purchased, firstGrantDate ->
                 _uiState.update {
                     it.copy(
                         exportFormat = settings.exportFormat,
@@ -96,6 +102,7 @@ class ExportViewModel @Inject constructor(
                         folderName = folderUri?.let { uri -> fileExportManager.getFolderDisplayName(uri) },
                         freeExportsRemaining = freeExports,
                         isPurchased = purchased,
+                        firstHealthPermissionGrantDate = firstGrantDate,
                     )
                 }
             }.collect()
@@ -121,6 +128,9 @@ class ExportViewModel @Inject constructor(
                     return@launch
                 }
             } else false
+            if (hasPerms) {
+                settingsRepository.recordHealthPermissionGrantDateIfAbsent(LocalDate.now())
+            }
             val hasHistoricalPerms = if (available) {
                 try {
                     healthRepository.hasHistoricalReadPermission()
@@ -128,11 +138,13 @@ class ExportViewModel @Inject constructor(
                     false
                 }
             } else false
+            val firstGrantDate = settingsRepository.getFirstHealthPermissionGrantDate()
             _uiState.update {
                 it.copy(
                     healthConnectAvailable = available,
                     hasPermissions = hasPerms,
                     hasHistoricalReadPermission = hasHistoricalPerms,
+                    firstHealthPermissionGrantDate = firstGrantDate,
                 )
             }
         }
@@ -335,11 +347,15 @@ class ExportViewModel @Inject constructor(
                 _uiState.update { it.copy(healthConnectNeedsSetup = true) }
                 return@launch
             }
+            if (hasPerms) {
+                settingsRepository.recordHealthPermissionGrantDateIfAbsent(LocalDate.now())
+            }
             val hasHistoricalPerms = try {
                 healthRepository.hasHistoricalReadPermission()
             } catch (_: Exception) {
                 false
             }
+            val firstGrantDate = settingsRepository.getFirstHealthPermissionGrantDate()
             val refreshedAllTimeStart = if (hasHistoricalPerms && _uiState.value.allTimeSelected) {
                 try {
                     healthRepository.getEarliestDataDate()
@@ -354,6 +370,7 @@ class ExportViewModel @Inject constructor(
                     startDate = refreshedAllTimeStart ?: it.startDate,
                     hasPermissions = hasPerms,
                     hasHistoricalReadPermission = hasHistoricalPerms,
+                    firstHealthPermissionGrantDate = firstGrantDate,
                 )
             }
         }

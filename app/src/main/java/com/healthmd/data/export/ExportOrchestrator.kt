@@ -114,7 +114,63 @@ class ExportOrchestrator(
 
                 onProgress?.invoke(processedDays + index + 1, totalDays, date.toString())
                 val healthData = healthDataByDate[date] ?: HealthData(date)
-                val filteredData = healthData.filtered(effectiveSelection).filtered(settings.metricSelection)
+                var filteredData = healthData.filtered(effectiveSelection).filtered(settings.metricSelection)
+
+                if (!filteredData.hasAnyData) {
+                    val fallbackData = try {
+                        healthRepository.fetchHealthData(date)
+                    } catch (e: CancellationException) {
+                        return ExportResult(
+                            successCount = successCount,
+                            totalCount = totalDays,
+                            failedDateDetails = failedDateDetails,
+                            wasCancelled = true,
+                        )
+                    } catch (e: SecurityException) {
+                        val reason = classifySecurityException(e)
+                        if (reason == ExportFailureReason.RATE_LIMITED) {
+                            markRemainingRateLimited(
+                                dates = dates,
+                                startIndex = processedDays + index,
+                                totalDays = totalDays,
+                                error = e,
+                                failedDateDetails = failedDateDetails,
+                                onProgress = onProgress,
+                            )
+                            return ExportResult(
+                                successCount = successCount,
+                                totalCount = totalDays,
+                                failedDateDetails = failedDateDetails,
+                            )
+                        }
+                        failedDateDetails.add(FailedDateDetail(date, reason, e.message))
+                        continue
+                    } catch (e: Exception) {
+                        val reason = if (e.isHealthConnectRateLimit() || e.isLikelyHealthConnectRateLimit()) {
+                            ExportFailureReason.RATE_LIMITED
+                        } else {
+                            classifyException(e)
+                        }
+                        if (reason == ExportFailureReason.RATE_LIMITED) {
+                            markRemainingRateLimited(
+                                dates = dates,
+                                startIndex = processedDays + index,
+                                totalDays = totalDays,
+                                error = e,
+                                failedDateDetails = failedDateDetails,
+                                onProgress = onProgress,
+                            )
+                            return ExportResult(
+                                successCount = successCount,
+                                totalCount = totalDays,
+                                failedDateDetails = failedDateDetails,
+                            )
+                        }
+                        failedDateDetails.add(FailedDateDetail(date, reason, e.message))
+                        continue
+                    }
+                    filteredData = fallbackData.filtered(effectiveSelection).filtered(settings.metricSelection)
+                }
 
                 if (!filteredData.hasAnyData) {
                     failedDateDetails.add(FailedDateDetail(date, ExportFailureReason.NO_HEALTH_DATA))

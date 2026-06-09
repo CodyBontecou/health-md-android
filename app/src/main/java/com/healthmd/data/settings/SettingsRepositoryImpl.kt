@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import java.time.LocalDate
 
 class SettingsRepositoryImpl(
     private val dataStore: DataStore<Preferences>,
@@ -28,6 +29,7 @@ class SettingsRepositoryImpl(
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
         val SUCCESSFUL_EXPORT_COUNT = intPreferencesKey("successful_export_count")
         val HAS_REQUESTED_REVIEW = booleanPreferencesKey("has_requested_review")
+        val FIRST_HEALTH_PERMISSION_GRANT_DATE = stringPreferencesKey("first_health_permission_grant_date")
         val LAST_PRESENTED_RELEASE_VERSION = stringPreferencesKey("last_presented_release_version")
     }
 
@@ -127,6 +129,23 @@ class SettingsRepositoryImpl(
     override suspend fun setReviewRequested() {
         dataStore.edit { prefs ->
             prefs[Keys.HAS_REQUESTED_REVIEW] = true
+        }
+    }
+
+    override val firstHealthPermissionGrantDate: Flow<LocalDate?> = dataStore.data.map { prefs ->
+        prefs[Keys.FIRST_HEALTH_PERMISSION_GRANT_DATE]?.let { rawDate ->
+            runCatching { LocalDate.parse(rawDate) }.getOrNull()
+        }
+    }
+
+    override suspend fun getFirstHealthPermissionGrantDate(): LocalDate? =
+        firstHealthPermissionGrantDate.first()
+
+    override suspend fun recordHealthPermissionGrantDateIfAbsent(date: LocalDate) {
+        dataStore.edit { prefs ->
+            if (prefs[Keys.FIRST_HEALTH_PERMISSION_GRANT_DATE].isNullOrBlank()) {
+                prefs[Keys.FIRST_HEALTH_PERMISSION_GRANT_DATE] = date.toString()
+            }
         }
     }
 
