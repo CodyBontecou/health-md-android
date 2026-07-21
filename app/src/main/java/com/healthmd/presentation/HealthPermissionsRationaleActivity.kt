@@ -99,9 +99,64 @@ private val categories = listOf(
         R.string.privacy_category_mindfulness_exports,
     ),
     PermissionCategory(
-        R.string.privacy_category_medical,
-        R.string.privacy_category_medical_permissions,
-        R.string.privacy_category_medical_exports,
+        R.string.privacy_category_medical_vaccines,
+        R.string.privacy_category_medical_vaccines_permission,
+        R.string.privacy_category_medical_vaccines_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_allergies,
+        R.string.privacy_category_medical_allergies_permission,
+        R.string.privacy_category_medical_allergies_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_conditions,
+        R.string.privacy_category_medical_conditions_permission,
+        R.string.privacy_category_medical_conditions_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_labs,
+        R.string.privacy_category_medical_labs_permission,
+        R.string.privacy_category_medical_labs_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_medications,
+        R.string.privacy_category_medical_medications_permission,
+        R.string.privacy_category_medical_medications_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_personal,
+        R.string.privacy_category_medical_personal_permission,
+        R.string.privacy_category_medical_personal_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_practitioner,
+        R.string.privacy_category_medical_practitioner_permission,
+        R.string.privacy_category_medical_practitioner_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_pregnancy,
+        R.string.privacy_category_medical_pregnancy_permission,
+        R.string.privacy_category_medical_pregnancy_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_procedures,
+        R.string.privacy_category_medical_procedures_permission,
+        R.string.privacy_category_medical_procedures_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_social_history,
+        R.string.privacy_category_medical_social_history_permission,
+        R.string.privacy_category_medical_social_history_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_visits,
+        R.string.privacy_category_medical_visits_permission,
+        R.string.privacy_category_medical_visits_purpose,
+    ),
+    PermissionCategory(
+        R.string.privacy_category_medical_vital_signs,
+        R.string.privacy_category_medical_vital_signs_permission,
+        R.string.privacy_category_medical_vital_signs_purpose,
     ),
     PermissionCategory(
         R.string.privacy_category_history,
@@ -168,13 +223,13 @@ private fun CategoryCard(category: PermissionCategory) {
             )
 
             LabeledRow(
-                label = "Permissions:",
+                label = "Read access:",
                 value = stringResource(category.permissionsRes),
                 monospace = true,
             )
 
             LabeledRow(
-                label = "Export:",
+                label = "Purpose:",
                 value = stringResource(category.exportsRes),
             )
         }

@@ -132,6 +132,7 @@ fun HealthMetricDefinition.displayNameRes(): Int = when (id) {
     "ovulation_test" -> R.string.metric_name_ovulation_test
     "sexual_activity" -> R.string.metric_name_sexual_activity
     "intermenstrual_bleeding" -> R.string.metric_name_intermenstrual_bleeding
+    "medical_resources" -> R.string.metric_name_medical_resources
     "workouts" -> R.string.metric_name_workouts
     else -> R.string.metric_name_unknown
 }

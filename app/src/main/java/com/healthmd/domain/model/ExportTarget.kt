@@ -19,9 +19,7 @@ object APIExportEndpoint {
         if (trimmed.isEmpty() || trimmed.contains('\r') || trimmed.contains('\n')) return null
 
         val uri = runCatching { URI(trimmed) }.getOrNull() ?: return null
-        if (!uri.scheme.equals("https", ignoreCase = true) &&
-            !uri.scheme.equals("http", ignoreCase = true)
-        ) return null
+        if (!uri.scheme.equals("https", ignoreCase = true)) return null
         if (uri.host.isNullOrBlank()) return null
         if (uri.rawUserInfo != null || uri.rawFragment != null) return null
 

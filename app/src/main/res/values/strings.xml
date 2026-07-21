@@ -120,7 +120,7 @@
     <string name="export_guidance_device_locked">Unlock your phone once after reboot, then retry.</string>
     <string name="export_guidance_no_folder">Select an export folder and retry.</string>
     <string name="export_guidance_health_connect">Check Health Connect permissions and retry a smaller date range.</string>
-    <string name="export_guidance_api_configuration" translatable="false">Open API Endpoint settings and enter a valid HTTP or HTTPS URL.</string>
+    <string name="export_guidance_api_configuration" translatable="false">Open API Endpoint settings and enter a valid HTTPS URL.</string>
     <string name="export_guidance_network" translatable="false">Check your connection and the endpoint’s TLS certificate, then retry.</string>
     <string name="export_guidance_api_rejected" translatable="false">Check the endpoint path, saved authorization or custom headers, request limits, and server logs before retrying.</string>
     <string name="export_guidance_unknown">Retry with a smaller range. If it keeps failing, send feedback with this export history.</string>
@@ -233,7 +233,7 @@
     <string name="metric_category_mindfulness">Mindfulness</string>
     <string name="metric_category_reproductive">Reproductive Health</string>
     <string name="metric_category_symptoms">Symptoms</string>
-    <string name="metric_category_medications">Medications</string>
+    <string name="metric_category_medications">Medical Records</string>
     <string name="metric_category_other">Other</string>
     <string name="metric_category_workouts">Workouts</string>
 
@@ -337,6 +337,8 @@
     <string name="metric_name_sexual_activity">Sexual Activity</string>
     <string name="metric_name_intermenstrual_bleeding">Intermenstrual Bleeding</string>
     <string name="metric_name_workouts">Workouts</string>
+    <string name="metric_name_medical_resources" translatable="false">Medical records (FHIR)</string>
+    <string name="metric_description_medical_resources" translatable="false">Includes vaccines, allergies and intolerances, conditions, laboratory results, medications, personal and practitioner details, pregnancy, procedures, social history, visits, and clinical vital signs.</string>
     <string name="metric_name_unknown">Unknown metric</string>
 
     <!-- Daily note injection screen -->
@@ -552,7 +554,7 @@
 
     <!-- Privacy policy / permissions rationale (HealthPermissionsRationaleActivity) -->
     <string name="privacy_policy_title">Health Connect Permissions</string>
-    <string name="privacy_policy_subtitle">Health.md is a health data export app. Every permission below maps directly to data read from Health Connect and exported only to the destination you choose. Folder exports stay in local or provider-backed storage. If you explicitly select API Endpoint, the selected records are sent directly to the HTTP or HTTPS URL you configure; HTTP connections are not encrypted in transit. Personal Health Record resources are exported only when you select that metric and grant the related permissions. History access is used for large manual exports. Background access is used only when you enable scheduled exports.</string>
+    <string name="privacy_policy_subtitle">Health.md is a read-only health data portability and personal record management app. It creates user-requested Markdown and CSV summaries or JSON and provider-native snapshots from Health Connect records, then writes them only to the folder or HTTPS endpoint the user selects. Health.md does not diagnose, recommend treatment, or write to Health Connect. Each section below identifies the requested read access, its export purpose, and its benefit to the user.</string>
 
     <!-- Per-category permission rationale labels -->
     <string name="privacy_category_sleep">Sleep</string>
@@ -591,9 +593,53 @@
     <string name="privacy_category_mindfulness_permissions">MindfulnessSession</string>
     <string name="privacy_category_mindfulness_exports">Exported fields: mindful minutes and session counts</string>
 
-    <string name="privacy_category_medical">Medical Resources</string>
-    <string name="privacy_category_medical_permissions">Medical allergies/intolerances, conditions, laboratory results, medications, personal details, practitioner details, pregnancy, procedures, social history, vaccines, visits, and vital signs</string>
-    <string name="privacy_category_medical_exports">Exported fields: local Personal Health Record resource counts, resource types, display names, codes, timestamps, and source metadata when Health Connect provides them</string>
+    <string name="privacy_category_medical_vaccines" translatable="false">Medical Records — Vaccines</string>
+    <string name="privacy_category_medical_vaccines_permission" translatable="false">READ_MEDICAL_DATA_VACCINES</string>
+    <string name="privacy_category_medical_vaccines_purpose" translatable="false">Includes Immunization FHIR records in a user-requested export so the user’s portable medical archive preserves vaccination history, dates, codes, status, and source details supplied by Health Connect.</string>
+
+    <string name="privacy_category_medical_allergies" translatable="false">Medical Records — Allergies and Intolerances</string>
+    <string name="privacy_category_medical_allergies_permission" translatable="false">READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES</string>
+    <string name="privacy_category_medical_allergies_purpose" translatable="false">Includes AllergyIntolerance FHIR records so the user’s export preserves recorded substances, reactions, severity or status, dates, and source details instead of omitting allergy history.</string>
+
+    <string name="privacy_category_medical_conditions" translatable="false">Medical Records — Conditions</string>
+    <string name="privacy_category_medical_conditions_permission" translatable="false">READ_MEDICAL_DATA_CONDITIONS</string>
+    <string name="privacy_category_medical_conditions_purpose" translatable="false">Includes Condition FHIR records so the user’s export preserves diagnoses and problem-list history, including codes, status, dates, and source details supplied by Health Connect.</string>
+
+    <string name="privacy_category_medical_labs" translatable="false">Medical Records — Laboratory Results</string>
+    <string name="privacy_category_medical_labs_permission" translatable="false">READ_MEDICAL_DATA_LABORATORY_RESULTS</string>
+    <string name="privacy_category_medical_labs_purpose" translatable="false">Includes laboratory Observation FHIR records so the user’s export preserves reported values, units, reference information, codes, dates, and source details for personal record portability.</string>
+
+    <string name="privacy_category_medical_medications" translatable="false">Medical Records — Medications</string>
+    <string name="privacy_category_medical_medications_permission" translatable="false">READ_MEDICAL_DATA_MEDICATIONS</string>
+    <string name="privacy_category_medical_medications_purpose" translatable="false">Includes Medication, MedicationRequest, and MedicationStatement FHIR records so the user’s export preserves medication and prescription history exactly as Health Connect provides it.</string>
+
+    <string name="privacy_category_medical_personal" translatable="false">Medical Records — Personal Details</string>
+    <string name="privacy_category_medical_personal_permission" translatable="false">READ_MEDICAL_DATA_PERSONAL_DETAILS</string>
+    <string name="privacy_category_medical_personal_purpose" translatable="false">Includes Patient FHIR records so exported medical resources retain the person and demographic context needed for the user to identify and manage their own portable record.</string>
+
+    <string name="privacy_category_medical_practitioner" translatable="false">Medical Records — Practitioner Details</string>
+    <string name="privacy_category_medical_practitioner_permission" translatable="false">READ_MEDICAL_DATA_PRACTITIONER_DETAILS</string>
+    <string name="privacy_category_medical_practitioner_purpose" translatable="false">Includes Practitioner and PractitionerRole FHIR records referenced by visits, results, medications, and procedures so the user’s archive retains care-provider context.</string>
+
+    <string name="privacy_category_medical_pregnancy" translatable="false">Medical Records — Pregnancy</string>
+    <string name="privacy_category_medical_pregnancy_permission" translatable="false">READ_MEDICAL_DATA_PREGNANCY</string>
+    <string name="privacy_category_medical_pregnancy_purpose" translatable="false">Includes pregnancy-related FHIR records so a user who has this data can preserve pregnancy status and history in the same portable archive as the rest of their medical record.</string>
+
+    <string name="privacy_category_medical_procedures" translatable="false">Medical Records — Procedures</string>
+    <string name="privacy_category_medical_procedures_permission" translatable="false">READ_MEDICAL_DATA_PROCEDURES</string>
+    <string name="privacy_category_medical_procedures_purpose" translatable="false">Includes Procedure FHIR records so the user’s export preserves performed procedure history, codes, dates, status, and source details supplied by Health Connect.</string>
+
+    <string name="privacy_category_medical_social_history" translatable="false">Medical Records — Social History</string>
+    <string name="privacy_category_medical_social_history_permission" translatable="false">READ_MEDICAL_DATA_SOCIAL_HISTORY</string>
+    <string name="privacy_category_medical_social_history_purpose" translatable="false">Includes social-history FHIR observations so the user’s export preserves lifestyle and clinical context recorded by their source system, without interpreting or changing it.</string>
+
+    <string name="privacy_category_medical_visits" translatable="false">Medical Records — Visits</string>
+    <string name="privacy_category_medical_visits_permission" translatable="false">READ_MEDICAL_DATA_VISITS</string>
+    <string name="privacy_category_medical_visits_purpose" translatable="false">Includes Encounter FHIR records so the user’s export preserves care-visit history and its dates, status, location, practitioner, and source references when provided.</string>
+
+    <string name="privacy_category_medical_vital_signs" translatable="false">Medical Records — Vital Signs</string>
+    <string name="privacy_category_medical_vital_signs_permission" translatable="false">READ_MEDICAL_DATA_VITAL_SIGNS</string>
+    <string name="privacy_category_medical_vital_signs_purpose" translatable="false">Includes clinical vital-sign Observation FHIR records so the user’s archive preserves measurements recorded in their medical record, separate from consumer sensor readings.</string>
 
     <string name="privacy_category_background">Scheduled Background Access</string>
     <string name="privacy_category_background_permissions">READ_HEALTH_DATA_IN_BACKGROUND</string>
@@ -603,7 +649,7 @@
     <string name="privacy_category_history_permissions">READ_HEALTH_DATA_HISTORY</string>
     <string name="privacy_category_history_exports">Used only for large manual exports, such as 90 days or all time, so Health.md can read Health Connect data older than the standard 30-day window</string>
 
-    <string name="privacy_policy_footer">Health.md does not operate a health-data cloud or use third-party analytics/attribution SDKs. First-party campaign attribution may send random app-generated install/event UUIDs and validated campaign metadata, never health data, raw referrers, device IDs, exports, accounts, or paths.</string>
+    <string name="privacy_policy_footer">Every permission is optional and can be denied or revoked individually in Health Connect. A denied category is omitted while other authorized exports continue to work. Health.md does not operate a health-data cloud or use health data for advertising, profiling, diagnosis, or treatment.</string>
 
     <!-- Legacy body string kept for locale fallback -->
     <string name="privacy_policy_body">Health.md reads Health Connect data solely to create exports you request. Folder exports go to selected storage; API Endpoint exports go directly to a service you configure. Separately, first-party campaign attribution can associate a Play install with a campaign using random app-generated UUIDs and sanitized campaign metadata. No health data, raw referrer, device identifier, export content, account data, or file path is included.</string>
@@ -715,16 +761,17 @@
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Welcome to\nHealth.md</string>
-    <string name="onboarding_welcome_subtitle">Export your wellness journey as beautiful, portable markdown files</string>
-    <string name="onboarding_welcome_feature_1">Works with Obsidian, Notion, and any markdown app</string>
+    <string name="onboarding_welcome_subtitle">Create portable files from your Health Connect fitness data and medical records</string>
+    <string name="onboarding_welcome_feature_1">Markdown and CSV summaries or JSON and provider-native snapshots</string>
     <string name="onboarding_welcome_feature_2">Your health data goes only to destinations you choose</string>
-    <string name="onboarding_welcome_feature_3">Automated exports keep your notes up to date</string>
+    <string name="onboarding_welcome_feature_3">Manual and scheduled exports keep your personal archive current</string>
 
     <string name="onboarding_health_title">Your Health,\nYour Data</string>
-    <string name="onboarding_health_subtitle">Health.md needs permission to read your health data from Health Connect — but only to export it for you.</string>
-    <string name="onboarding_health_feature_1">Read-only access — we never modify your data</string>
-    <string name="onboarding_health_feature_2">Health exports use only destinations you choose</string>
-    <string name="onboarding_health_feature_3">No health-data cloud or third-party tracking</string>
+    <string name="onboarding_health_subtitle">Health.md requests read-only access to create the exports you initiate or schedule. Fitness records and each FHIR medical-record category are used only for that user-controlled export feature.</string>
+    <string name="onboarding_health_feature_1">Read-only access — Health.md never modifies Health Connect</string>
+    <string name="onboarding_health_feature_2">Deny any category; other authorized exports still work</string>
+    <string name="onboarding_health_feature_3">No Health.md health-data cloud, ads, diagnosis, or treatment</string>
+    <string name="onboarding_health_permission_details" translatable="false">Why each permission is requested</string>
     <string name="onboarding_health_grant_button">Connect Health Data</string>
     <string name="onboarding_health_connected">Health Connect linked</string>
 

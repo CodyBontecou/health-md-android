@@ -1,6 +1,7 @@
 package com.healthmd.presentation.onboarding
 
 import android.app.Activity
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -32,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.healthmd.R
 import com.healthmd.data.health.HealthConnectManager
+import com.healthmd.presentation.HealthPermissionsRationaleActivity
 import com.healthmd.presentation.common.*
 import com.healthmd.presentation.paywall.PaywallScreen
 import com.healthmd.presentation.paywall.PaywallViewModel
@@ -166,6 +168,9 @@ fun OnboardingScreen(
                                 } else {
                                     permissionLauncher.launch(healthConnectManager.permissions)
                                 }
+                            },
+                            onViewPermissionDetails = {
+                                context.startActivity(Intent(context, HealthPermissionsRationaleActivity::class.java))
                             },
                         )
                         2 -> StorageSetupPage(
@@ -302,11 +307,13 @@ private fun HealthAccessPage(
     healthConnectAvailable: Boolean,
     healthConnectNeedsSetup: Boolean,
     onGrantPermissions: () -> Unit,
+    onViewPermissionDetails: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = Spacing.lg),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -383,6 +390,14 @@ private fun HealthAccessPage(
         FeaturePill(
             icon = Icons.Outlined.CloudOff,
             text = stringResource(R.string.onboarding_health_feature_3),
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.md))
+
+        SecondaryButton(
+            text = stringResource(R.string.onboarding_health_permission_details),
+            onClick = onViewPermissionDetails,
+            modifier = Modifier.fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(Spacing.xl))

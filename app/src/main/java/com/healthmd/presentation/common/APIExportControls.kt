@@ -152,7 +152,7 @@ fun APIExportSettingsDialog(
 
     val saveSettings = {
         if (!APIExportEndpoint.isConfigured(endpointUrl)) {
-            localError = "Enter a valid HTTP or HTTPS URL without a fragment or embedded username/password."
+            localError = "Enter a valid HTTPS URL without a fragment or embedded username/password."
         } else {
             val headerError = requestHeaders
                 .takeIf { it.isNotBlank() }
@@ -367,7 +367,7 @@ private fun APISettingsDialogHeader(onDismiss: () -> Unit) {
                 color = colors.primary,
             )
             Text(
-                text = "Send selected records as one JSON POST to an HTTP or HTTPS endpoint you control.",
+                text = "Send selected records as one JSON POST to an HTTPS endpoint you control.",
                 style = GeistType.copy13,
                 color = colors.secondary,
             )

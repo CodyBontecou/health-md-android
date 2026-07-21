@@ -22,15 +22,15 @@ class ReleaseReadinessTest {
         }.readText()
 
     @Test
-    fun appVersion_isBumpedForCampaignAttributionRelease() {
+    fun appVersion_isBumpedForHealthConnectReviewRemediation() {
         val buildGradle = readRepoFile("app/build.gradle.kts")
 
-        assertTrue(buildGradle.contains("versionCode = 20"))
-        assertTrue(buildGradle.contains("versionName = \"1.5.2\""))
+        assertTrue(buildGradle.contains("versionCode = 22"))
+        assertTrue(buildGradle.contains("versionName = \"1.5.3\""))
     }
 
     @Test
-    fun playStoreReleaseNotes_describeCampaignAttributionRelease() {
+    fun playStoreReleaseNotes_describeHealthConnectReviewRemediation() {
         val releaseNotePaths = listOf(
             "play-console/listing/en-US/release-notes/en-US/default.txt",
             "app/src/main/play/release-notes/en-US/default.txt",
@@ -39,10 +39,10 @@ class ReleaseReadinessTest {
         releaseNotePaths.forEach { path ->
             val releaseNotes = readRepoFile(path)
 
-            assertTrue(releaseNotes.contains("v1.5.2"))
-            assertTrue(releaseNotes.contains("campaign links"))
-            assertTrue(releaseNotes.contains("health data"))
-            assertTrue(releaseNotes.contains("hardware identifiers"))
+            assertTrue(releaseNotes.contains("v1.5.3"))
+            assertTrue(releaseNotes.contains("Health Connect medical permission"))
+            assertTrue(releaseNotes.contains("FHIR medical-record export"))
+            assertTrue(releaseNotes.contains("HTTPS"))
             assertTrue("Play Store release notes should stay within the 500-character limit", releaseNotes.trim().length <= 500)
         }
     }

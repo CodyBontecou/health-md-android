@@ -247,6 +247,13 @@ fun MetricSelectionScreen(
                                                     color = AppColors.textMuted,
                                                 )
                                             }
+                                            if (metric.id == "medical_resources") {
+                                                Text(
+                                                    stringResource(R.string.metric_description_medical_resources),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = AppColors.textMuted,
+                                                )
+                                            }
                                         }
                                     }
                                 }

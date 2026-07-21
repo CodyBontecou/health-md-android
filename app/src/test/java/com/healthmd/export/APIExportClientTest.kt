@@ -74,24 +74,18 @@ class APIExportClientTest {
     }
 
     @Test
-    fun postsToHttpEndpoint() = runTest {
-        val httpServer = MockWebServer()
-        httpServer.start()
-        try {
-            httpServer.enqueue(MockResponse().setResponseCode(200))
-
-            val result = client.upload(
-                endpointUrl = httpServer.url("/healthmd").toString(),
+    fun rejectsHttpEndpointBeforeSending() = runTest {
+        val error = runCatching {
+            client.upload(
+                endpointUrl = "http://localhost:8080/healthmd",
                 payload = "{}",
                 authorizationHeader = null,
                 requestHeaders = emptyList(),
             )
+        }.exceptionOrNull() as APIExportClientException
 
-            assertThat(result.statusCode).isEqualTo(200)
-            assertThat(httpServer.takeRequest().method).isEqualTo("POST")
-        } finally {
-            httpServer.shutdown()
-        }
+        assertThat(error.failureReason).isEqualTo(ExportFailureReason.INVALID_API_ENDPOINT)
+        assertThat(error.retryable).isFalse()
     }
 
     @Test

@@ -46,7 +46,7 @@ class APIExportClient @Inject constructor(
             ?: throw APIExportClientException(
                 failureReason = ExportFailureReason.INVALID_API_ENDPOINT,
                 retryable = false,
-                message = "Configure a valid HTTP or HTTPS API endpoint before exporting.",
+                message = "Configure a valid HTTPS API endpoint before exporting.",
             )
 
         val validatedRequestHeaders = try {

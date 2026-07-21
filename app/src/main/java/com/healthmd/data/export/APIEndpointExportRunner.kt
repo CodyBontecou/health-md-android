@@ -48,7 +48,7 @@ class APIEndpointExportRunner @Inject constructor(
             ?: return configurationFailure(
                 normalizedDates,
                 ExportFailureReason.INVALID_API_ENDPOINT,
-                "Configure a valid HTTP or HTTPS API endpoint before exporting.",
+                "Configure a valid HTTPS API endpoint before exporting.",
             )
         // Capture endpoint credentials and headers atomically at action start. Manual and
         // scheduled exports therefore cannot mix old and new configuration mid-collection.
