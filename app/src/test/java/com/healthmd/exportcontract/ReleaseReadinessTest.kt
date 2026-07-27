@@ -25,7 +25,7 @@ class ReleaseReadinessTest {
     fun appVersion_isBumpedForHealthConnectReliabilityRelease() {
         val buildGradle = readRepoFile("app/build.gradle.kts")
 
-        assertTrue(buildGradle.contains("versionCode = 22"))
+        assertTrue(buildGradle.contains("versionCode = 23"))
         assertTrue(buildGradle.contains("versionName = \"1.5.3\""))
     }
 
