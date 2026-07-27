@@ -31,6 +31,7 @@ import com.healthmd.domain.repository.ExportHistoryRepository
 import com.healthmd.domain.repository.ExportRepository
 import com.healthmd.domain.repository.HealthRepository
 import com.healthmd.domain.repository.SettingsRepository
+import com.healthmd.presentation.common.HealthConnectActionError
 import com.healthmd.presentation.settings.SettingsViewModel
 import com.healthmd.rawexport.ExportMode
 import io.mockk.every
@@ -59,6 +60,25 @@ class ExportViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun permissionCheckFailureIsVisibleToTheUser() = runTest {
+        val viewModel = createViewModel(
+            healthRepository = FakeHealthRepository(
+                permissionError = IllegalStateException("Health Connect setup incomplete")
+            )
+        )
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hasPermissions).isFalse()
+        assertThat(viewModel.uiState.value.healthConnectNeedsSetup).isTrue()
+        assertThat(viewModel.uiState.value.healthConnectActionError)
+            .isEqualTo(HealthConnectActionError.ACCESS_CHECK_FAILED)
+
+        viewModel.clearHealthConnectActionError()
+        assertThat(viewModel.uiState.value.healthConnectActionError).isNull()
+    }
 
     @Test
     fun largeExportMissingHistoricalPermissionDoesNotExport() = runTest {
@@ -290,7 +310,7 @@ class ExportViewModelTest {
     }
 
     @Test
-    fun allTimeExportMissingHistoricalPermissionDoesNotExportEvenWhenVisibleDataIsRecent() = runTest {
+    fun allTimeExportDoesNotRequireHistoryWhenAllVisibleDataIsRecent() = runTest {
         val today = LocalDate.now()
         val healthRepository = FakeHealthRepository(
             hasPermissions = true,
@@ -310,15 +330,15 @@ class ExportViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.allTimeSelected).isTrue()
-        assertThat(viewModel.uiState.value.requiresHistoricalReadPermission).isTrue()
-        assertThat(viewModel.uiState.value.historyPermissionNeeded).isTrue()
+        assertThat(viewModel.uiState.value.requiresHistoricalReadPermission).isFalse()
+        assertThat(viewModel.uiState.value.historyPermissionNeeded).isFalse()
 
         viewModel.startExport()
         advanceUntilIdle()
 
-        assertThat(healthRepository.fetchCalls).isEqualTo(0)
-        assertThat(exportRepository.exportCalls).isEqualTo(0)
-        assertThat(historyRepository.entries).isEmpty()
+        assertThat(healthRepository.fetchCalls).isEqualTo(7)
+        assertThat(exportRepository.exportCalls).isEqualTo(7)
+        assertThat(historyRepository.entries).hasSize(1)
     }
 
     @Test
@@ -405,6 +425,7 @@ private class FakeHealthRepository(
     private val hasPermissions: Boolean = true,
     private val hasHistoricalReadPermission: Boolean = true,
     private val earliestDataDate: LocalDate? = null,
+    private val permissionError: Throwable? = null,
 ) : HealthRepository {
     var fetchCalls = 0
         private set
@@ -419,7 +440,8 @@ private class FakeHealthRepository(
 
     override suspend fun isAvailable(): Boolean = true
 
-    override suspend fun hasPermissions(): Boolean = hasPermissions
+    override suspend fun hasPermissions(): Boolean =
+        permissionError?.let { throw it } ?: hasPermissions
 
     override suspend fun hasHistoricalReadPermission(): Boolean = hasHistoricalReadPermission
 

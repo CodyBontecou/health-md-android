@@ -35,11 +35,13 @@ import com.healthmd.domain.repository.SettingsRepository
 import com.healthmd.presentation.MainActivity
 import com.healthmd.rawexport.ExportMode
 import com.healthmd.presentation.navigation.NavDestination
+import com.healthmd.util.runCatchingCancellable
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
+import timber.log.Timber
 
 @HiltWorker
 class ExportWorker @AssistedInject constructor(
@@ -163,7 +165,13 @@ class ExportWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        if (!healthRepository.hasBackgroundReadPermission()) {
+        val backgroundPermissionResult = runCatchingCancellable {
+            healthRepository.hasBackgroundReadPermission()
+        }
+        backgroundPermissionResult.exceptionOrNull()?.let { error ->
+            Timber.e(error, "Unable to verify background health access for scheduled export")
+        }
+        if (!backgroundPermissionResult.getOrDefault(false)) {
             val failureDetails = dates.map { FailedDateDetail(it, ExportFailureReason.BACKGROUND_PERMISSION_DENIED) }
             exportHistoryRepository.insertEntry(
                 ExportHistoryEntry(

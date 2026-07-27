@@ -10,6 +10,7 @@ import com.healthmd.data.export.ExportOrchestrator
 import com.healthmd.data.export.RawSnapshotService
 import com.healthmd.data.scheduler.ExportScheduler
 import com.healthmd.data.storage.FileExportManager
+import com.healthmd.domain.billing.FreemiumPolicy
 import com.healthmd.domain.export.ExportAccountingPolicy
 import com.healthmd.domain.model.*
 import com.healthmd.domain.repository.BillingRepository
@@ -20,6 +21,8 @@ import com.healthmd.domain.repository.SettingsRepository
 import com.healthmd.rawexport.ExportMode
 import com.healthmd.rawexport.RawExportFormat
 import com.healthmd.rawexport.RawSnapshotScope
+import com.healthmd.presentation.common.HealthConnectActionError
+import com.healthmd.util.runCatchingCancellable
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -54,13 +57,14 @@ data class ExportUiState(
     val lastResult: ExportResult? = null,
     val preview: ExportPreview? = null,
     val exportedFolderUri: String? = null,
-    val healthConnectAvailable: Boolean = true,
+    val healthConnectAvailable: Boolean = false,
     val healthConnectNeedsSetup: Boolean = false,
     val hasPermissions: Boolean = false,
     val hasHistoricalReadPermission: Boolean = false,
+    val healthConnectActionError: HealthConnectActionError? = null,
     val firstHealthPermissionGrantDate: LocalDate? = null,
     val allTimeSelected: Boolean = false,
-    val freeExportsRemaining: Int = 3,
+    val freeExportsRemaining: Int = FreemiumPolicy.FREE_EXPORT_LIMIT,
     val isPurchased: Boolean = false,
     val apiAuthorizationConfigured: Boolean = false,
     val apiRequestHeadersConfigured: Boolean = false,
@@ -68,7 +72,7 @@ data class ExportUiState(
     val selectedHealthProviderId: String = "health_connect",
 ) {
     val requiresHistoricalReadPermission: Boolean
-        get() = allTimeSelected || ExportHistoryAccess.requiresHistoricalReadPermission(
+        get() = ExportHistoryAccess.requiresHistoricalReadPermission(
             startDate = startDate,
             endDate = endDate,
             firstPermissionGrantDate = firstHealthPermissionGrantDate,
@@ -138,6 +142,7 @@ class ExportViewModel @Inject constructor(
 
     private var exportJob: Job? = null
     private var dismissJob: Job? = null
+    private var healthRefreshJob: Job? = null
 
     init {
         // Ensure billing client is connected so isUnlocked reflects real purchase state
@@ -187,39 +192,7 @@ class ExportViewModel @Inject constructor(
                 .collect { settingsRepository.setPurchased(true) }
         }
 
-        viewModelScope.launch {
-            val available = healthRepository.isAvailable()
-            val hasPerms = if (available) {
-                try {
-                    healthRepository.hasPermissions()
-                } catch (_: Exception) {
-                    // SDK_AVAILABLE but client init failed — Health Connect not set up yet
-                    _uiState.update {
-                        it.copy(healthConnectAvailable = true, healthConnectNeedsSetup = true)
-                    }
-                    return@launch
-                }
-            } else false
-            if (hasPerms) {
-                settingsRepository.recordHealthPermissionGrantDateIfAbsent(LocalDate.now())
-            }
-            val hasHistoricalPerms = if (available) {
-                try {
-                    healthRepository.hasHistoricalReadPermission()
-                } catch (_: Exception) {
-                    false
-                }
-            } else false
-            val firstGrantDate = settingsRepository.getFirstHealthPermissionGrantDate()
-            _uiState.update {
-                it.copy(
-                    healthConnectAvailable = available,
-                    hasPermissions = hasPerms,
-                    hasHistoricalReadPermission = hasHistoricalPerms,
-                    firstHealthPermissionGrantDate = firstGrantDate,
-                )
-            }
-        }
+        refreshPermissions()
     }
 
     fun setStartDate(date: LocalDate) {
@@ -632,39 +605,83 @@ class ExportViewModel @Inject constructor(
     }
 
     fun refreshPermissions() {
-        viewModelScope.launch {
-            val hasPerms = try {
-                healthRepository.hasPermissions()
-            } catch (_: Exception) {
-                _uiState.update { it.copy(healthConnectNeedsSetup = true) }
+        healthRefreshJob?.cancel()
+        healthRefreshJob = viewModelScope.launch {
+            val available = runCatchingCancellable { healthRepository.isAvailable() }
+                .getOrElse {
+                    _uiState.update { state ->
+                        state.copy(
+                            hasPermissions = false,
+                            healthConnectActionError = HealthConnectActionError.ACCESS_CHECK_FAILED,
+                        )
+                    }
+                    return@launch
+                }
+
+            if (!available) {
+                _uiState.update {
+                    it.copy(
+                        healthConnectAvailable = false,
+                        healthConnectNeedsSetup = false,
+                        hasPermissions = false,
+                        hasHistoricalReadPermission = false,
+                        healthConnectActionError = it.healthConnectActionError
+                            .takeUnless { error -> error == HealthConnectActionError.ACCESS_CHECK_FAILED },
+                    )
+                }
                 return@launch
             }
+
+            val hasPerms = runCatchingCancellable { healthRepository.hasPermissions() }
+                .getOrElse {
+                    _uiState.update { state ->
+                        state.copy(
+                            healthConnectAvailable = true,
+                            healthConnectNeedsSetup = true,
+                            hasPermissions = false,
+                            healthConnectActionError = HealthConnectActionError.ACCESS_CHECK_FAILED,
+                        )
+                    }
+                    return@launch
+                }
             if (hasPerms) {
                 settingsRepository.recordHealthPermissionGrantDateIfAbsent(LocalDate.now())
             }
-            val hasHistoricalPerms = try {
+
+            val historicalResult = runCatchingCancellable {
                 healthRepository.hasHistoricalReadPermission()
-            } catch (_: Exception) {
-                false
             }
+            val hasHistoricalPerms = historicalResult.getOrDefault(false)
             val firstGrantDate = settingsRepository.getFirstHealthPermissionGrantDate()
             val refreshedAllTimeStart = if (hasHistoricalPerms && _uiState.value.allTimeSelected) {
-                try {
-                    healthRepository.getEarliestDataDate()
-                } catch (_: Exception) {
-                    null
-                }
+                runCatchingCancellable { healthRepository.getEarliestDataDate() }.getOrNull()
             } else {
                 null
             }
             _uiState.update {
                 it.copy(
                     startDate = refreshedAllTimeStart ?: it.startDate,
+                    healthConnectAvailable = true,
+                    healthConnectNeedsSetup = false,
                     hasPermissions = hasPerms,
                     hasHistoricalReadPermission = hasHistoricalPerms,
+                    healthConnectActionError = if (historicalResult.isFailure) {
+                        HealthConnectActionError.ACCESS_CHECK_FAILED
+                    } else {
+                        it.healthConnectActionError
+                            .takeUnless { error -> error == HealthConnectActionError.ACCESS_CHECK_FAILED }
+                    },
                     firstHealthPermissionGrantDate = firstGrantDate,
                 )
             }
         }
+    }
+
+    fun reportHealthConnectActionError(error: HealthConnectActionError) {
+        _uiState.update { it.copy(healthConnectActionError = error) }
+    }
+
+    fun clearHealthConnectActionError() {
+        _uiState.update { it.copy(healthConnectActionError = null) }
     }
 }
